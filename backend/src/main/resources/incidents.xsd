@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://smartcity.com/soap"
+           xmlns:tns="http://smartcity.com/soap"
+           elementFormDefault="qualified">
+
+    <!-- Request: get a single incident by ID -->
+    <xs:element name="GetIncidentRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Response: incident details -->
+    <xs:element name="GetIncidentResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="incident" type="tns:IncidentSoap" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Request: get all incidents summary -->
+    <xs:element name="GetAllIncidentsRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="page" type="xs:int" default="0"/>
+                <xs:element name="size" type="xs:int" default="10"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="GetAllIncidentsResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="incidents" type="tns:IncidentSoap" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="totalElements" type="xs:long"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Incident type used in SOAP responses -->
+    <xs:complexType name="IncidentSoap">
+        <xs:sequence>
+            <xs:element name="id" type="xs:long"/>
+            <xs:element name="title" type="xs:string"/>
+            <xs:element name="description" type="xs:string"/>
+            <xs:element name="location" type="xs:string"/>
+            <xs:element name="status" type="xs:string"/>
+            <xs:element name="urgencyScore" type="xs:int"/>
+            <xs:element name="type" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>
