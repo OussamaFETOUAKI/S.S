@@ -24,7 +24,7 @@ public class IncidentService {
 
     public Incident createIncident(Incident incident) {
         // AI ANALYSIS TRIGGER
-        Map<String, String> analysis = geminiService.analyzeIncident(incident.getDescription(), incident.getImageUrl());
+        Map<String, String> analysis = geminiService.analyzeIncident(incident.getTitle(), incident.getDescription(), incident.getImageUrl());
 
         // Sync AI result to entity
         incident.setType(analysis.get("type"));

@@ -23,21 +23,22 @@ public class GeminiAIService {
 
     @CircuitBreaker(name = "geminiService", fallbackMethod = "analyzeIncidentFallback")
     @Retry(name = "geminiService")
-    public Map<String, String> analyzeIncident(String description, String imageBase64) {
+    public Map<String, String> analyzeIncident(String title, String description, String imageBase64) {
         try {
             String safeDescription = (description != null && !description.trim().isEmpty()) ? description : "[No description provided]";
-            String prompt = "Analyze this urban incident. User provided description: '" + safeDescription + "'. " +
-                    "CRITICAL INSTRUCTION: If an image is attached, you MUST analyze the image visually to detect the type and emergency level of the incident. Rely primarily on the image if the description is empty, unhelpful, or gibberish. " +
+            String safeTitle = (title != null && !title.trim().isEmpty()) ? title : "[No title provided]";
+            String prompt = "Analyze this urban incident. User provided title: '" + safeTitle + "', User provided description: '" + safeDescription + "'. " +
+                    "CRITICAL INSTRUCTION: If an image is attached, you MUST analyze the image visually to detect the type and emergency level of the incident. Rely primarily on the image if the description is empty, unhelpful, or gibberish. Use the title and description as supplementary context. " +
                     "Return ONLY a JSON object with keys: type (fire, accident, trash, infrastructure), " +
                     "urgency (Simple, Moyen, Très urgent), urgencyScore (an integer from 0 to 100 representing exact severity, 100 being catastrophic), action (suggested solution for administration), " +
                     "and reporterSuggestion (What the reporter should do right now, e.g. 'Call 15 for Moroccan ambulance/firefighters', 'Call 19 for Moroccan police', 'Call 150 for civil protection'). " +
-                    "CRITICAL URGENCY RULE: If the image or description shows a FIRE, ACCIDENT, or immediate danger to life/property, the urgencyScore MUST be between 90 and 100, and urgency MUST be 'Très urgent'. " +
-                    "Detect the language used in the Description (e.g., French, Arabic, English, Darija) and write the 'action' and 'reporterSuggestion' in that EXACT language. If the description is empty or in no recognizable language, default to English.";
+                    "CRITICAL URGENCY RULE: If the image, title, or description shows a FIRE, ACCIDENT, or immediate danger to life/property, the urgencyScore MUST be between 90 and 100, and urgency MUST be 'Très urgent'. " +
+                    "Detect the language used in the Description or Title (e.g., French, Arabic, English, Darija) and write the 'action' and 'reporterSuggestion' in that EXACT language. If no recognizable language is detected, default to English.";
 
             Map<String, Object> requestBody = createGeminiRequest(prompt, imageBase64);
             String response = restTemplate.postForObject(apiUrl + "?key=" + apiKey, requestBody, String.class);
 
-            return parseGeminiResponse(response);
+            return parseGeminiResponse(response, title, description);
         } catch (Exception e) {
             System.err.println("Gemini API Error: " + e.getMessage());
             throw new RuntimeException("Gemini API failed", e);
@@ -45,9 +46,9 @@ public class GeminiAIService {
     }
 
     // Resilience4j Fallback — called automatically when circuit opens
-    public Map<String, String> analyzeIncidentFallback(String description, String imageBase64, Throwable t) {
+    public Map<String, String> analyzeIncidentFallback(String title, String description, String imageBase64, Throwable t) {
         System.err.println("[Circuit Breaker] Gemini is down, using fallback. Reason: " + t.getMessage());
-        return getFallbackAnalysis(description);
+        return getFallbackAnalysis(title, description);
     }
 
     private Map<String, Object> createGeminiRequest(String prompt, String imageBase64) {
@@ -64,7 +65,7 @@ public class GeminiAIService {
         return Map.of("contents", List.of(Map.of("parts", parts)));
     }
 
-    private Map<String, String> parseGeminiResponse(String response) {
+    private Map<String, String> parseGeminiResponse(String response, String title, String description) {
         try {
             JsonNode root = objectMapper.readTree(response);
             String text = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
@@ -81,15 +82,17 @@ public class GeminiAIService {
             analysis.put("reporterSuggestion", result.path("reporterSuggestion").asText("No immediate action needed."));
             return analysis;
         } catch (Exception e) {
-            return getFallbackAnalysis("");
+            return getFallbackAnalysis(title, description);
         }
     }
 
-    private Map<String, String> getFallbackAnalysis(String description) {
+    private Map<String, String> getFallbackAnalysis(String title, String description) {
         Map<String, String> fallback = new HashMap<>();
         String desc = (description != null ? description.toLowerCase() : "");
+        String titl = (title != null ? title.toLowerCase() : "");
+        String combined = titl + " " + desc;
 
-        if (desc.contains("fire") || desc.contains("smoke")) {
+        if (combined.contains("fire") || combined.contains("smoke")) {
             fallback.put("type", "fire");
             fallback.put("urgency", "Très urgent");
             fallback.put("urgencyScore", "95");
