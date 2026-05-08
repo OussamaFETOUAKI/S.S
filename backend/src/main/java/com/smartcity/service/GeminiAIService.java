@@ -25,11 +25,14 @@ public class GeminiAIService {
     @Retry(name = "geminiService")
     public Map<String, String> analyzeIncident(String description, String imageBase64) {
         try {
-            String prompt = "Analyze this urban incident. Description: " + description +
-                    ". Return ONLY a JSON object with keys: type (fire, accident, trash, infrastructure), " +
+            String safeDescription = (description != null && !description.trim().isEmpty()) ? description : "[No description provided]";
+            String prompt = "Analyze this urban incident. User provided description: '" + safeDescription + "'. " +
+                    "CRITICAL INSTRUCTION: If an image is attached, you MUST analyze the image visually to detect the type and emergency level of the incident. Rely primarily on the image if the description is empty, unhelpful, or gibberish. " +
+                    "Return ONLY a JSON object with keys: type (fire, accident, trash, infrastructure), " +
                     "urgency (Simple, Moyen, Très urgent), urgencyScore (an integer from 0 to 100 representing exact severity, 100 being catastrophic), action (suggested solution for administration), " +
                     "and reporterSuggestion (What the reporter should do right now, e.g. 'Call 15 for Moroccan ambulance/firefighters', 'Call 19 for Moroccan police', 'Call 150 for civil protection'). " +
-                    "CRITICAL: Detect the language used in the Description (e.g., French, Arabic, English, Darija) and write the 'action' and 'reporterSuggestion' in that EXACT language.";
+                    "CRITICAL URGENCY RULE: If the image or description shows a FIRE, ACCIDENT, or immediate danger to life/property, the urgencyScore MUST be between 90 and 100, and urgency MUST be 'Très urgent'. " +
+                    "Detect the language used in the Description (e.g., French, Arabic, English, Darija) and write the 'action' and 'reporterSuggestion' in that EXACT language. If the description is empty or in no recognizable language, default to English.";
 
             Map<String, Object> requestBody = createGeminiRequest(prompt, imageBase64);
             String response = restTemplate.postForObject(apiUrl + "?key=" + apiKey, requestBody, String.class);
