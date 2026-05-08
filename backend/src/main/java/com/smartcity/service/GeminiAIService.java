@@ -28,7 +28,7 @@ public class GeminiAIService {
             String safeDescription = (description != null && !description.trim().isEmpty()) ? description : "[No description provided]";
             String safeTitle = (title != null && !title.trim().isEmpty()) ? title : "[No title provided]";
             String prompt = "Analyze this urban incident. User provided title: '" + safeTitle + "', User provided description: '" + safeDescription + "'. " +
-                    "CRITICAL INSTRUCTION: If an image is attached, you MUST analyze the image visually to detect the type and emergency level of the incident. Rely primarily on the image if the description is empty, unhelpful, or gibberish. Use the title and description as supplementary context. " +
+                    "CRITICAL INSTRUCTION: Evaluate the incident based on ANY available information. If the user provides ONLY an image, rely entirely on the image. If they provide ONLY a title or ONLY a description, rely entirely on the text. If multiple are provided, use them together. Never complain about missing info; analyze whatever is provided. " +
                     "Return ONLY a JSON object with keys: type (fire, accident, trash, infrastructure), " +
                     "urgency (Simple, Moyen, Très urgent), urgencyScore (an integer from 0 to 100 representing exact severity, 100 being catastrophic), action (suggested solution for administration), " +
                     "and reporterSuggestion (What the reporter should do right now, e.g. 'Call 15 for Moroccan ambulance/firefighters', 'Call 19 for Moroccan police', 'Call 150 for civil protection'). " +
