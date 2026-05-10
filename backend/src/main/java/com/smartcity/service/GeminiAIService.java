@@ -27,13 +27,14 @@ public class GeminiAIService {
         try {
             String safeDescription = (description != null && !description.trim().isEmpty()) ? description : "[No description provided]";
             String safeTitle = (title != null && !title.trim().isEmpty()) ? title : "[No title provided]";
-            String prompt = "Analyze this urban incident. User provided title: '" + safeTitle + "', User provided description: '" + safeDescription + "'. " +
+            String safeImage = (imageBase64 != null && !imageBase64.trim().isEmpty()) ? "[Image attached]" : "[No image provided]";
+            String prompt = "Analyze this urban incident. User provided title: '" + safeTitle + "', User provided description: '" + safeDescription + "', Image Status: " + safeImage + ". " +
                     "CRITICAL INSTRUCTION: Evaluate the incident based on ANY available information. If the user provides ONLY an image, rely entirely on the image. If they provide ONLY a title or ONLY a description, rely entirely on the text. If multiple are provided, use them together. Never complain about missing info; analyze whatever is provided. " +
                     "Return ONLY a JSON object with keys: type (fire, accident, trash, infrastructure), " +
                     "urgency (Simple, Moyen, Très urgent), urgencyScore (an integer from 0 to 100 representing exact severity, 100 being catastrophic), action (suggested solution for administration), " +
                     "and reporterSuggestion (What the reporter should do right now, e.g. 'Call 15 for Moroccan ambulance/firefighters', 'Call 19 for Moroccan police', 'Call 150 for civil protection'). " +
                     "CRITICAL URGENCY RULE: If the image, title, or description shows a FIRE, ACCIDENT, or immediate danger to life/property, the urgencyScore MUST be between 90 and 100, and urgency MUST be 'Très urgent'. " +
-                    "Detect the language used in the Description or Title (e.g., French, Arabic, English, Darija) and write the 'action' and 'reporterSuggestion' in that EXACT language. If no recognizable language is detected, default to English.";
+                    "Detect the language used in the Description, Title, or any visible text in the image (e.g., French, Arabic, English, Darija) and write the 'action' and 'reporterSuggestion' in that EXACT language. If no recognizable language is detected from any of these sources, default to English.";
 
             Map<String, Object> requestBody = createGeminiRequest(prompt, imageBase64);
             String response = restTemplate.postForObject(apiUrl + "?key=" + apiKey, requestBody, String.class);
@@ -67,8 +68,10 @@ public class GeminiAIService {
 
     private Map<String, String> parseGeminiResponse(String response, String title, String description) {
         try {
+            System.out.println("RAW GEMINI RESPONSE: " + response);
             JsonNode root = objectMapper.readTree(response);
             String text = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+            System.out.println("GEMINI EXTRACTED TEXT: " + text);
 
             // Clean markdown if AI returns it
             String jsonText = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
@@ -80,8 +83,11 @@ public class GeminiAIService {
             analysis.put("urgencyScore", result.path("urgencyScore").asText("50"));
             analysis.put("action", result.path("action").asText("Conduct inspection."));
             analysis.put("reporterSuggestion", result.path("reporterSuggestion").asText("No immediate action needed."));
+            
+            System.out.println("PARSED URGENCY SCORE: " + analysis.get("urgencyScore"));
             return analysis;
         } catch (Exception e) {
+            System.err.println("FAILED TO PARSE GEMINI RESPONSE: " + e.getMessage());
             return getFallbackAnalysis(title, description);
         }
     }

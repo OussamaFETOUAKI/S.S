@@ -34,9 +34,10 @@ public class IncidentService {
 
         // Use dynamic Urgency Score from AI
         try {
-            int dynamicScore = Integer.parseInt(analysis.getOrDefault("urgencyScore", "50"));
+            String rawScore = analysis.getOrDefault("urgencyScore", "50").replaceAll("[^0-9]", "");
+            int dynamicScore = Integer.parseInt(rawScore.isEmpty() ? "50" : rawScore);
             incident.setUrgencyScore(Math.min(100, Math.max(0, dynamicScore)));
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             incident.setUrgencyScore(50);
         }
 

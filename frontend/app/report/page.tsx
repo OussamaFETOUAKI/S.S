@@ -202,11 +202,11 @@ export default function ReportPage() {
                             <div className="space-y-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-600 ml-2">Header</label>
-                                    <input type="text" placeholder="Instance Title" value={title} onChange={e => setTitle(e.target.value)} required className="w-full bg-slate-900/50 border border-white/5 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-sky-500 transition-all" />
+                                    <input type="text" placeholder="Instance Title (Optional)" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-slate-900/50 border border-white/5 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-sky-500 transition-all" />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-600 ml-2">Description</label>
-                                    <textarea placeholder="Describe incident specifics..." value={description} onChange={e => setDescription(e.target.value)} required rows={4} className="w-full bg-slate-900/50 border border-white/5 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-sky-500 transition-all" />
+                                    <textarea placeholder="Describe incident specifics... (Optional)" value={description} onChange={e => setDescription(e.target.value)} rows={4} className="w-full bg-slate-900/50 border border-white/5 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-sky-500 transition-all" />
                                 </div>
                             </div>
 
